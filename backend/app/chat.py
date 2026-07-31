@@ -600,7 +600,74 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
         # --- LLM returned text or error: pass through ---
         return ChatResponse(type=resp_type if resp_type in ["text", "error"] else "text", message=message)
 
-    # ===== FALLBACK: No LLM available =====
+    # ===== SMART FALLBACK: No LLM available — try contextual database answers =====
+    
+    # Admin: queries about bookings, guests, or rooms
+    if user_role == "admin":
+        # General booking list
+        if any(w in query_lower for w in ["booking", "reservation", "booked", "guest"]):
+            all_bookings = db.query(Booking).all()
+            if all_bookings:
+                items = []
+                for b in all_bookings:
+                    rm = db.query(Room).filter(Room.id == b.room_id).first()
+                    guest = db.query(User).filter(User.id == b.user_id).first()
+                    status_label = (
+                        "⏳ Pending Approval" if b.status == "pending_approval"
+                        else "✅ Approved" if b.status == "approved"
+                        else "💳 Deposit Paid & Confirmed" if b.status == "paid"
+                        else "❌ Declined"
+                    )
+                    guest_name = guest.full_name if guest else "Guest"
+                    room_name = f"{rm.title} (#{rm.room_number})" if rm else f"Room #{b.room_id}"
+                    dates = f"{b.check_in_date} → {b.check_out_date}" if b.check_in_date else "TBD"
+                    price_str = f" · ₹{b.total_price:,.0f}" if b.total_price else ""
+                    items.append(f"• **#LS-{b.id}** | {guest_name} | {room_name} | {dates}{price_str} | {status_label}")
+                
+                msg = f"📋 **LuxeStay Reservations Dashboard** ({len(all_bookings)} total):\n\n" + "\n".join(items)
+                return ChatResponse(type="text", message=msg)
+            else:
+                return ChatResponse(type="text", message="There are currently no bookings in the system.")
+        
+        # Room inventory / status
+        if any(w in query_lower for w in ["room", "inventory", "available", "status"]):
+            total = db.query(Room).count()
+            avail = db.query(Room).filter(Room.status == "available").count()
+            booked = db.query(Room).filter(Room.status == "booked").count()
+            pending = db.query(Room).filter(Room.status == "pending_approval").count()
+            msg = (
+                f"🏨 **Room Inventory Status**:\n\n"
+                f"• Total Rooms: **{total}**\n"
+                f"• Available: **{avail}** ✅\n"
+                f"• Booked / Confirmed: **{booked}** 🔒\n"
+                f"• Pending Approval: **{pending}** ⏳"
+            )
+            return ChatResponse(type="text", message=msg)
+    
+    # Guest: queries about their own bookings
+    if user and any(w in query_lower for w in ["booking", "reservation", "booked", "my room"]):
+        bookings = db.query(Booking).filter(Booking.user_id == user.id).all()
+        if bookings:
+            items = []
+            for b in bookings:
+                rm = db.query(Room).filter(Room.id == b.room_id).first()
+                title = rm.title if rm else f"Room #{b.room_id}"
+                status_label = (
+                    "⏳ Awaiting Manager Approval" if b.status == "pending_approval"
+                    else "✅ Approved (Awaiting 30% Deposit)" if b.status == "approved"
+                    else "💳 30% Deposit Paid & Confirmed" if b.status == "paid"
+                    else "❌ Declined"
+                )
+                dates = f"{b.check_in_date} → {b.check_out_date}" if b.check_in_date else "Standard stay"
+                price_str = f" (Total: ₹{b.total_price:,.0f})" if b.total_price else ""
+                items.append(f"• **{title}** (#{rm.room_number if rm else '?'})\n  📅 {dates}{price_str}\n  Status: {status_label}")
+            
+            msg = f"You have **{len(bookings)} reservation{'s' if len(bookings) > 1 else ''}** with LuxeStay:\n\n" + "\n\n".join(items)
+            return ChatResponse(type="text", message=msg)
+        else:
+            return ChatResponse(type="text", message="You don't have any reservations yet. Would you like to browse our available rooms?")
+    
+    # Fallback: RAG context if available
     if rag_context:
         return ChatResponse(type="text", message=f"Based on our hotel information:\n\n" + "\n".join([f"• {doc.content}" for doc in relevant_docs]))
 
