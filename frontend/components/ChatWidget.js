@@ -184,6 +184,12 @@ export default function ChatWidget() {
   const [addOnExtraBed, setAddOnExtraBed] = useState(false);
   const [confirmedBookingIndices, setConfirmedBookingIndices] = useState([]);
   const [submittedCardsData, setSubmittedCardsData] = useState({});
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     setAddOnTransfer(false);
@@ -276,6 +282,10 @@ export default function ChatWidget() {
   };
 
   const handleConfirmBooking = async (confirmItem, msgIndex) => {
+    if (!user) {
+      showToast("Please log in to confirm a booking.");
+      return;
+    }
     setLoading(true);
     setMessages((prev) => [...prev, { sender: "user", text: `Confirm booking for Room #${confirmItem.room_number}` }]);
     try {
@@ -358,6 +368,10 @@ export default function ChatWidget() {
   };
 
   const handleBookFromCard = async (room, checkIn, checkOut) => {
+    if (!user) {
+      showToast("Please log in to book a room.");
+      return;
+    }
     setLoading(true);
     const inDate = checkIn || "2026-08-01";
     const outDate = checkOut || "2026-08-03";
@@ -868,6 +882,13 @@ export default function ChatWidget() {
             </button>
           </form>
 
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="absolute bottom-20 right-0 mb-4 mr-4 bg-slate-800 text-white text-sm px-4 py-2 rounded shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {toast}
         </div>
       )}
     </div>
