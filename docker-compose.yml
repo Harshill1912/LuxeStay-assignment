@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: luxestay_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-luxestay_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-luxestay_password}
+      POSTGRES_DB: ${POSTGRES_DB:-luxestay_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
