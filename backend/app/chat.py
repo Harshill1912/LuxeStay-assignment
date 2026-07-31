@@ -314,6 +314,73 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
         msg = f"You currently have **{len(bookings)} reservation{'s' if len(bookings) > 1 else ''}** with LuxeStay:\n\n" + "\n\n".join(items)
         return ChatResponse(type="text", message=msg)
 
+    # --- ADMIN BOOKINGS LOOKUP DETERMINISTIC INTERCEPT ---
+    is_admin_lookup_query = any(w in query_lower for w in ["booked by", "booking by", "bookings by", "reservations by", "booked for", "bookings of", "reservations of", "books by", "booking for"])
+    if is_admin_lookup_query and user_role == "admin":
+        import re
+        search_term = ""
+        match = re.search(r'(?:by user|by|for|of)\s+([a-z0-9_\-\.\s@]+)', query_lower)
+        if match:
+            search_term = match.group(1).strip()
+            
+        if search_term:
+            matched_users = db.query(User).filter(
+                (User.full_name.ilike(f"%{search_term}%")) | 
+                (User.email.ilike(f"%{search_term}%"))
+            ).all()
+            
+            if matched_users:
+                user_ids = [u.id for u in matched_users]
+                bookings = db.query(Booking).filter(Booking.user_id.in_(user_ids)).all()
+                
+                if bookings:
+                    items = []
+                    for b in bookings:
+                        rm = db.query(Room).filter(Room.id == b.room_id).first()
+                        title = rm.title if rm else f"Room #{b.room_id}"
+                        guest = db.query(User).filter(User.id == b.user_id).first()
+                        
+                        status_label = (
+                            "Pending Approval" if b.status == "pending_approval"
+                            else "Approved (Awaiting Deposit)" if b.status == "approved"
+                            else "Deposit Paid & Confirmed" if b.status == "paid"
+                            else "Declined / Cancelled"
+                        )
+                        dates_label = f"{b.check_in_date} to {b.check_out_date}" if b.check_in_date and b.check_out_date else "Standard stay"
+                        price_label = f" (Total: ₹{b.total_price:,.0f})" if b.total_price else ""
+                        items.append(
+                            f"• **Booking ID #LS-{b.id}** for Guest **{guest.full_name if guest else 'Guest'}** ({guest.email if guest else 'N/A'})\n"
+                            f"  🏨 Accommodation: {title} (Room #{rm.room_number if rm else '?'})\n"
+                            f"  📅 Dates: {dates_label}{price_label}\n"
+                            f"  Status: **{status_label}**"
+                        )
+                    
+                    msg = f"Found **{len(bookings)} reservation{'s' if len(bookings) > 1 else ''}** matching your search for guest **\"{search_term}\"**:\n\n" + "\n\n".join(items)
+                    return ChatResponse(type="text", message=msg)
+                else:
+                    return ChatResponse(type="text", message=f"No active bookings found for guest matching \"{search_term}\".")
+            else:
+                return ChatResponse(type="text", message=f"No guests found matching name or email: \"{search_term}\".")
+        
+        all_bookings = db.query(Booking).all()
+        if not all_bookings:
+            return ChatResponse(type="text", message="There are currently no bookings registered in the LuxeStay database.")
+            
+        items = []
+        for b in all_bookings:
+            rm = db.query(Room).filter(Room.id == b.room_id).first()
+            guest = db.query(User).filter(User.id == b.user_id).first()
+            status_label = (
+                "Pending Approval" if b.status == "pending_approval"
+                else "Approved (Awaiting Deposit)" if b.status == "approved"
+                else "Deposit Paid & Confirmed" if b.status == "paid"
+                else "Declined"
+            )
+            items.append(f"• **#LS-{b.id}**: {guest.full_name if guest else 'Guest'} · Room #{rm.room_number if rm else '?'} ({b.status})")
+        
+        msg = f"Here is the complete historical and active reservations log ({len(all_bookings)} total):\n\n" + "\n".join(items)
+        return ChatResponse(type="text", message=msg)
+
     # --- ADMIN OCCUPANCY QUERIES DETERMINISTIC INTERCEPT ---
     is_occupancy_query = any(w in query_lower for w in [
         "occupancy", "room status summary", "inventory status", "rooms status", "how many rooms are available", "how many rooms is available"
