@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxeStay — Project Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #111827;
+            --muted: #6b7280;
+            --light: #9ca3af;
+            --border: #e5e7eb;
+            --bg: #ffffff;
+            --surface: #f9fafb;
+            --accent: #2563eb;
+            --accent-light: #eff6ff;
+            --gold: #d97706;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--ink);
+            background: var(--bg);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 60px 32px 100px;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 56px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            font-size: 17px;
+            color: var(--muted);
+            max-width: 600px;
+        }
+
+        /* Links row */
+        .links-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .links-row a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--accent);
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .links-row a:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        .links-row a svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 48px;
+        }
+
+        section h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: -0.01em;
+        }
+
+        section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            margin-top: 24px;
+        }
+
+        section p, section li {
+            font-size: 15px;
+            color: var(--muted);
+        }
+
+        section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        section ul li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        section ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0 20px;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 13px;
+            color: var(--ink);
+            overflow-x: auto;
+            line-height: 1.8;
+        }
+
+        .code-block .comment {
+            color: var(--light);
+        }
+
+        .code-block .cmd {
+            color: var(--accent);
+        }
+
+        /* Credentials card */
+        .cred-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .cred-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--light);
+            margin-bottom: 12px;
+        }
+
+        .cred-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .cred-row:last-child {
+            border-bottom: none;
+        }
+
+        .cred-row .label {
+            font-weight: 500;
+            color: var(--ink);
+        }
+
+        .cred-row .value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            color: var(--muted);
+            background: var(--bg);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* Feature grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+
+        .feature-card {
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: border-color 0.15s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent);
+        }
+
+        .feature-card .icon {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .feature-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .feature-card p {
+            font-size: 13px;
+            color: var(--light);
+            line-height: 1.5;
+        }
+
+        /* Tech stack */
+        .tech-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .tech-pill {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 48px 0;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--light);
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* Architecture diagram */
+        .arch-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .arch-box {
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .arch-box.frontend {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+        }
+
+        .arch-box.backend {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .arch-box.db {
+            background: #fefce8;
+            color: #ca8a04;
+            border: 1px solid #fde68a;
+        }
+
+        .arch-box.ai {
+            background: #faf5ff;
+            color: #9333ea;
+            border: 1px solid #e9d5ff;
+        }
+
+        .arch-arrow {
+            font-size: 18px;
+            color: var(--light);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <header class="header">
+            <span class="badge">Documentation</span>
+            <h1>LuxeStay</h1>
+            <p>AI-powered luxury hotel management system with real-time concierge chatbot, smart booking workflows, and an agency operations dashboard.</p>
+
+            <div class="links-row">
+                <a href="https://luxestay-assignment-ten.vercel.app" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-4.5 0V6m0 0L9 10.5m4.5-4.5L18 10.5"/></svg>
+                    Live Demo
+                </a>
+                <a href="https://github.com/Harshill1912/LuxeStay-assignment" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.28-1.23 3.28-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    GitHub Repository
+                </a>
+                <a href="https://luxestay-assignment.onrender.com/docs" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+                    API Docs (Swagger)
+                </a>
+            </div>
+        </header>
+
+        <!-- Architecture -->
+        <section>
+            <h2>Architecture</h2>
+            <div class="arch-diagram">
+                <div class="arch-box frontend">Next.js 16<br><small>Vercel</small></div>
+                <span class="arch-arrow">→</span>
+                <div class="arch-box backend">FastAPI<br><small>Render</small></div>
+                <span class="arch-arrow">→</span>
+                <div class="arch-box db">PostgreSQL<br><small>Render DB</small></div>
+                <span class="arch-arrow">↔</span>
+                <div class="arch-box ai">Gemini AI<br><small>Google</small></div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section>
+            <h2>Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">🤖</div>
+                    <h4>AI Concierge Chatbot</h4>
+                    <p>Gemini-powered conversational assistant with RAG context, deterministic failsafes, and interactive booking cards.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🏨</div>
+                    <h4>Room Booking System</h4>
+                    <p>Browse luxury rooms, request reservations with date & guest selection, and receive real-time status updates.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">💳</div>
+                    <h4>30% Advance Deposit</h4>
+                    <p>Secure checkout with live VISA card preview. 30% deposit confirms the booking, 70% balance due at check-in.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🏢</div>
+                    <h4>Agency Admin Dashboard</h4>
+                    <p>Real-time occupancy metrics, approve/reject bookings, manage room inventory, and guest lookup via AI chat.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📄</div>
+                    <h4>PDF Reservation Pass</h4>
+                    <p>Auto-generated printable reservation voucher with QR code, booking details, and payment breakdown.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🔐</div>
+                    <h4>JWT Authentication</h4>
+                    <p>Role-based access control with secure login, signup, and one-click demo credentials for both guest and admin.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🎨</div>
+                    <h4>Premium UI / UX</h4>
+                    <p>Glassmorphism design, smooth animations, responsive layouts, and dark gradient aesthetics throughout.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">⚡</div>
+                    <h4>Smart Fallbacks</h4>
+                    <p>Deterministic intent intercepts ensure the chatbot works reliably even when the AI API is rate-limited or offline.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack -->
+        <section>
+            <h2>Tech Stack</h2>
+            <div class="tech-pills">
+                <span class="tech-pill">Next.js 16</span>
+                <span class="tech-pill">React 19</span>
+                <span class="tech-pill">FastAPI</span>
+                <span class="tech-pill">Python 3.11</span>
+                <span class="tech-pill">PostgreSQL</span>
+                <span class="tech-pill">SQLAlchemy</span>
+                <span class="tech-pill">Google Gemini AI</span>
+                <span class="tech-pill">JWT Auth</span>
+                <span class="tech-pill">Vercel</span>
+                <span class="tech-pill">Render</span>
+                <span class="tech-pill">RAG (Retrieval-Augmented Generation)</span>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Getting Started -->
+        <section>
+            <h2>Getting Started</h2>
+
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>Python 3.10+ and pip</li>
+                <li>Node.js 18+ and npm</li>
+                <li>Git</li>
+            </ul>
+
+            <h3>1. Clone the Repository</h3>
+            <div class="code-block">
+                <span class="cmd">$</span> git clone https://github.com/Harshill1912/LuxeStay-assignment.git<br>
+                <span class="cmd">$</span> cd LuxeStay-assignment
+            </div>
+
+            <h3>2. Backend Setup</h3>
+            <div class="code-block">
+                <span class="cmd">$</span> cd backend<br>
+                <span class="cmd">$</span> pip install -r requirements.txt<br><br>
+                <span class="comment"># Create .env file with:</span><br>
+                DATABASE_URL=sqlite:///./luxestay.db<br>
+                SECRET_KEY=your_secret_key<br>
+                GEMINI_API_KEY=your_gemini_api_key<br>
+                LLM_MODEL=gemini-flash-latest<br><br>
+                <span class="comment"># Seed the database</span><br>
+                <span class="cmd">$</span> python seed.py<br><br>
+                <span class="comment"># Start the server</span><br>
+                <span class="cmd">$</span> uvicorn app.main:app --reload --port 8000
+            </div>
+
+            <h3>3. Frontend Setup</h3>
+            <div class="code-block">
+                <span class="cmd">$</span> cd frontend<br>
+                <span class="cmd">$</span> npm install<br><br>
+                <span class="comment"># Create .env.local with:</span><br>
+                NEXT_PUBLIC_API_URL=http://localhost:8000<br><br>
+                <span class="comment"># Start the dev server</span><br>
+                <span class="cmd">$</span> npm run dev
+            </div>
+
+            <h3>4. Open in Browser</h3>
+            <div class="code-block">
+                Frontend → <a href="http://localhost:3000" style="color: var(--accent);">http://localhost:3000</a><br>
+                Backend API → <a href="http://localhost:8000/docs" style="color: var(--accent);">http://localhost:8000/docs</a>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Demo Credentials -->
+        <section>
+            <h2>Demo Credentials</h2>
+            <p style="margin-bottom: 16px;">Use the one-click demo login buttons on the login page, or enter manually:</p>
+
+            <div class="cred-card">
+                <h4>👤 Guest Account</h4>
+                <div class="cred-row">
+                    <span class="label">Email</span>
+                    <span class="value">user@luxestay.com</span>
+                </div>
+                <div class="cred-row">
+                    <span class="label">Password</span>
+                    <span class="value">user123</span>
+                </div>
+                <div class="cred-row">
+                    <span class="label">Role</span>
+                    <span class="value">Guest</span>
+                </div>
+            </div>
+
+            <div class="cred-card">
+                <h4>🔑 Agency Admin Account</h4>
+                <div class="cred-row">
+                    <span class="label">Email</span>
+                    <span class="value">admin@luxestay.com</span>
+                </div>
+                <div class="cred-row">
+                    <span class="label">Password</span>
+                    <span class="value">admin123</span>
+                </div>
+                <div class="cred-row">
+                    <span class="label">Role</span>
+                    <span class="value">Admin (Agency)</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Deployment -->
+        <section>
+            <h2>Deployment</h2>
+
+            <h3>Backend — Render</h3>
+            <ul>
+                <li>Service: Web Service (Python)</li>
+                <li>Build Command: <code style="font-size:13px; background:var(--surface); padding:2px 8px; border-radius:4px;">pip install -r requirements.txt</code></li>
+                <li>Start Command: <code style="font-size:13px; background:var(--surface); padding:2px 8px; border-radius:4px;">uvicorn app.main:app --host 0.0.0.0 --port $PORT</code></li>
+                <li>Root Directory: <code style="font-size:13px; background:var(--surface); padding:2px 8px; border-radius:4px;">backend/</code></li>
+                <li>Environment: DATABASE_URL, SECRET_KEY, GEMINI_API_KEY</li>
+            </ul>
+
+            <h3>Frontend — Vercel</h3>
+            <ul>
+                <li>Framework: Next.js</li>
+                <li>Root Directory: <code style="font-size:13px; background:var(--surface); padding:2px 8px; border-radius:4px;">frontend/</code></li>
+                <li>Environment: <code style="font-size:13px; background:var(--surface); padding:2px 8px; border-radius:4px;">NEXT_PUBLIC_API_URL=https://luxestay-assignment.onrender.com</code></li>
+            </ul>
+
+            <h3>Database — Render PostgreSQL</h3>
+            <ul>
+                <li>Auto-seeded on first startup with demo users and room inventory</li>
+                <li>12 luxury rooms across 4 categories (Suites, Villas, Executive, Cabanas)</li>
+            </ul>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- API Endpoints -->
+        <section>
+            <h2>Key API Endpoints</h2>
+            <div class="code-block">
+                POST  /api/auth/signup          <span class="comment"># Register new user</span><br>
+                POST  /api/auth/login           <span class="comment"># Login & get JWT token</span><br>
+                GET   /api/rooms                <span class="comment"># List all rooms</span><br>
+                POST  /api/bookings             <span class="comment"># Create booking request</span><br>
+                GET   /api/bookings             <span class="comment"># Get user's bookings</span><br>
+                PATCH /api/bookings/{id}/status  <span class="comment"># Approve/Reject (admin)</span><br>
+                POST  /api/bookings/{id}/pay    <span class="comment"># Process 30% deposit</span><br>
+                POST  /api/chat                 <span class="comment"># AI Concierge chat</span><br>
+                GET   /api/admin/stats          <span class="comment"># Dashboard metrics (admin)</span>
+            </div>
+        </section>
+
+        <!-- Project Structure -->
+        <section>
+            <h2>Project Structure</h2>
+            <div class="code-block">
+LuxeStay-assignment/<br>
+├── backend/<br>
+│   ├── app/<br>
+│   │   ├── main.py          <span class="comment"># FastAPI app entry point</span><br>
+│   │   ├── models.py        <span class="comment"># SQLAlchemy ORM models</span><br>
+│   │   ├── database.py      <span class="comment"># DB connection & session</span><br>
+│   │   ├── schemas.py       <span class="comment"># Pydantic request/response</span><br>
+│   │   ├── auth.py          <span class="comment"># JWT authentication</span><br>
+│   │   ├── chat.py          <span class="comment"># AI chatbot + intercepts</span><br>
+│   │   └── rag.py           <span class="comment"># RAG document retrieval</span><br>
+│   ├── seed.py              <span class="comment"># Database seeder</span><br>
+│   ├── requirements.txt<br>
+│   └── .env<br>
+├── frontend/<br>
+│   ├── app/<br>
+│   │   ├── page.js          <span class="comment"># Landing page</span><br>
+│   │   ├── login/page.js    <span class="comment"># Auth page</span><br>
+│   │   ├── rooms/page.js    <span class="comment"># Room browser</span><br>
+│   │   ├── bookings/page.js <span class="comment"># My reservations + checkout</span><br>
+│   │   ├── admin/page.js    <span class="comment"># Agency dashboard</span><br>
+│   │   └── amenities/page.js<span class="comment"># Hotel amenities</span><br>
+│   ├── components/<br>
+│   │   ├── ChatWidget.js    <span class="comment"># Floating AI concierge</span><br>
+│   │   └── Navbar.js        <span class="comment"># Navigation bar</span><br>
+│   └── package.json<br>
+└── docs/<br>
+    └── index.html           <span class="comment"># This documentation</span>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Built by <strong>Harshill</strong> · <a href="https://github.com/Harshill1912/LuxeStay-assignment" target="_blank">GitHub</a> · 2026</p>
+        </footer>
+
+    </div>
+</body>
+</html>

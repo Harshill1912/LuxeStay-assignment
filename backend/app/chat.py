@@ -234,8 +234,33 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
                 target_room = r
                 break
                 
+        # If no specific room mentioned, show all available rooms so user can pick
         if not target_room:
-            target_room = db.query(Room).filter(Room.status == "available").first()
+            avail_rooms = db.query(Room).filter(Room.status == "available").all()
+            if avail_rooms:
+                room_payloads = []
+                for r in avail_rooms:
+                    room_payloads.append({
+                        "id": r.id,
+                        "room_number": r.room_number,
+                        "title": r.title,
+                        "type": r.type,
+                        "price_per_night": r.price_per_night,
+                        "capacity": r.capacity,
+                        "description": r.description,
+                        "image_url": r.image_url,
+                        "status": r.status
+                    })
+                return ChatResponse(
+                    type="room_cards",
+                    message="Here are all the available rooms at LuxeStay. Please select the one you'd like to book:",
+                    data=room_payloads
+                )
+            else:
+                return ChatResponse(
+                    type="text",
+                    message="I'm sorry, all our rooms are currently occupied. Please check back shortly."
+                )
             
         if target_room:
             import re
