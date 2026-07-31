@@ -482,6 +482,7 @@ export default function AdminDashboardPage() {
                       <option value="all">All Statuses</option>
                       <option value="pending_approval">Pending Approval</option>
                       <option value="approved">Approved</option>
+                      <option value="paid">Deposit Paid</option>
                       <option value="rejected">Rejected</option>
                     </select>
                   </div>

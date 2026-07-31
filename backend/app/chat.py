@@ -84,7 +84,7 @@ def build_context(db: Session, user: Optional[User]) -> str:
                 rm = db.query(Room).filter(Room.id == b.room_id).first()
                 title_str = rm.title if rm else 'Room'
                 price_str = f"₹{b.total_price:,.0f}" if b.total_price is not None else "N/A"
-                status_str = 'Being confirmed' if b.status == 'pending_approval' else 'Confirmed' if b.status == 'approved' else 'Declined'
+                status_str = 'Being confirmed' if b.status == 'pending_approval' else 'Approved (Awaiting Deposit)' if b.status == 'approved' else 'Deposit Paid & Confirmed ✓' if b.status == 'paid' else 'Declined'
                 booking_items.append(
                     f"  - Booking #{b.id} for {title_str} (Dates: {b.check_in_date or 'Standard'} to {b.check_out_date or 'Standard'}, Total: {price_str}, Status: {status_str})"
                 )
@@ -223,7 +223,12 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
         for b in bookings:
             rm = db.query(Room).filter(Room.id == b.room_id).first()
             title = rm.title if rm else f"Room #{b.room_id}"
-            status_label = "Being confirmed by our team" if b.status == "pending_approval" else "Confirmed ✓" if b.status == "approved" else "Declined"
+            status_label = (
+                "Awaiting Manager Approval (Pending)" if b.status == "pending_approval"
+                else "Approved (Awaiting 30% Deposit Payment)" if b.status == "approved"
+                else "30% Deposit Paid & Stay Confirmed ✓" if b.status == "paid"
+                else "Declined / Cancelled"
+            )
             dates_label = f"{b.check_in_date} to {b.check_out_date}" if b.check_in_date and b.check_out_date else "Standard stay"
             price_label = f" (Total: ₹{b.total_price:,.0f})" if b.total_price else ""
             items.append(f"• **{title}** (Room #{rm.room_number if rm else '?'})\n  📅 Dates: {dates_label}{price_label}\n  Status: {status_label}")
