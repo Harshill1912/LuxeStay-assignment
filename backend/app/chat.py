@@ -209,7 +209,17 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
         )
 
     # --- DETERMINISTIC BOOKING CARD INTERCEPT (Failsafe for LLM rate limits/offline) ---
-    is_book_intent = any(w in query_lower for w in ["book", "reserve", "booking"])
+    is_query_or_status = any(w in query_lower for w in [
+        "how many", "status", "show my", "history", "list my", "list booking", "list bookings", "booked by", "who booked"
+    ])
+    
+    is_book_intent = False
+    if not is_query_or_status:
+        words = query_lower.split()
+        is_book_intent = any(w in ["book", "reserve", "booking"] for w in words) or any(phrase in query_lower for phrase in [
+            "want to book", "i want to book", "make a reservation", "book a room", "book the", "reserve the", "book room", "reserve room"
+        ])
+
     if is_book_intent:
         if not user:
             return ChatResponse(type="error", message="Please log in to book a room.")
