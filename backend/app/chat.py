@@ -286,6 +286,28 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
             data=room_payloads
         )
 
+    # --- DETERMINISTIC BOOKED COUNT INTERCEPT (Failsafe for LLM rate limits/offline) ---
+    is_booked_count_query = any(phrase in query_lower for phrase in [
+        "how many room is booked", "how many rooms is booked", "how many rooms are booked",
+        "how many room are booked", "how many booked rooms", "how many booked room", "how many rooms booked", "how many room booked"
+    ])
+    if is_booked_count_query:
+        if not user:
+            return ChatResponse(type="text", message="Please log in to check booking statistics.")
+        
+        if user_role == "admin":
+            total_booked_count = db.query(Booking).filter(Booking.status.in_(["approved", "paid"])).count()
+            return ChatResponse(
+                type="text",
+                message=f"There are currently **{total_booked_count} rooms** booked and confirmed in the LuxeStay database system."
+            )
+        else:
+            guest_bookings_count = db.query(Booking).filter(Booking.user_id == user.id, Booking.status.in_(["approved", "paid"])).count()
+            return ChatResponse(
+                type="text",
+                message=f"You currently have **{guest_bookings_count} confirmed reservation{'s' if guest_bookings_count > 1 else ''}** with LuxeStay."
+            )
+
     # --- GUEST RESERVATION QUERIES DETERMINISTIC INTERCEPT ---
     is_user_booking_query = any(w in query_lower for w in [
         "booked by me", "my booking", "my bookings", "my reservation", "my reservations", "show my booking", "how many rooms is booked", "how many rooms are booked"
