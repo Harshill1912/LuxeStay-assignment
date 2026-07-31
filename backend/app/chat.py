@@ -208,6 +208,74 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
             message="Unauthorized: Only administrators are permitted to approve or reject booking requests."
         )
 
+    # --- DETERMINISTIC BOOKING CARD INTERCEPT (Failsafe for LLM rate limits/offline) ---
+    is_book_intent = any(w in query_lower for w in ["book", "reserve", "booking"])
+    if is_book_intent:
+        if not user:
+            return ChatResponse(type="error", message="Please log in to book a room.")
+        
+        all_rooms = db.query(Room).all()
+        target_room = None
+        for r in all_rooms:
+            if r.room_number in query_lower:
+                target_room = r
+                break
+            if r.title.lower() in query_lower or (len(r.title) > 5 and r.title.lower()[:8] in query_lower):
+                target_room = r
+                break
+                
+        if not target_room:
+            target_room = db.query(Room).filter(Room.status == "available").first()
+            
+        if target_room:
+            import re
+            guests_match = re.search(r'(\d+)\s*guest', query_lower)
+            guests_count = int(guests_match.group(1)) if guests_match else 2
+            
+            room_payload = {
+                "id": target_room.id,
+                "room_number": target_room.room_number,
+                "title": target_room.title,
+                "type": target_room.type,
+                "price_per_night": target_room.price_per_night,
+                "capacity": target_room.capacity,
+                "description": target_room.description,
+                "image_url": target_room.image_url,
+                "status": target_room.status,
+                "check_in_date": "2026-08-01",
+                "check_out_date": "2026-08-03",
+                "nights": 2,
+                "num_guests": guests_count
+            }
+            return ChatResponse(
+                type="book_room",
+                message=f"I have initialized a booking session for the **{target_room.title}** (Room #{target_room.room_number}). Please review the checkout pass details below:",
+                data=[room_payload]
+            )
+
+    # --- DETERMINISTIC ROOM LIST INTERCEPT (Failsafe for LLM rate limits/offline) ---
+    is_search_intent = any(w in query_lower for w in ["show room", "show rooms", "available room", "available rooms", "search room", "search rooms", "view room", "view rooms", "list room", "list rooms", "find room", "find rooms", "availability"])
+    if is_search_intent:
+        avail_rooms = db.query(Room).filter(Room.status == "available").all()
+        room_payloads = []
+        for r in avail_rooms:
+            room_payloads.append({
+                "id": r.id,
+                "room_number": r.room_number,
+                "title": r.title,
+                "type": r.type,
+                "price_per_night": r.price_per_night,
+                "capacity": r.capacity,
+                "description": r.description,
+                "image_url": r.image_url,
+                "status": r.status
+            })
+        return ChatResponse(
+            type="room_cards",
+            message="Here are the exquisite rooms and suites available for your stay at LuxeStay:",
+            data=room_payloads
+        )
+
     # --- GUEST RESERVATION QUERIES DETERMINISTIC INTERCEPT ---
     is_user_booking_query = any(w in query_lower for w in [
         "booked by me", "my booking", "my bookings", "my reservation", "my reservations", "show my booking", "how many rooms is booked", "how many rooms are booked"
