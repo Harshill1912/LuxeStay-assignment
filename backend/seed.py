@@ -181,23 +181,7 @@ def seed():
             db.add_all(rooms)
             db.commit()
 
-        # Seed Pending Booking for Admin In-Chat Approval Testing
-        from app.models import Booking
-        if db.query(Booking).count() == 0:
-            user = db.query(User).filter(User.email == "user@luxestay.com").first()
-            room = db.query(Room).filter(Room.room_number == "102").first()
-            if user and room:
-                room.status = "pending_approval"
-                pending_booking = Booking(
-                    room_id=room.id,
-                    user_id=user.id,
-                    status="pending_approval",
-                    check_in_date="2026-08-01",
-                    check_out_date="2026-08-03",
-                    total_price=177000.0
-                )
-                db.add(pending_booking)
-                db.commit()
+        # No default bookings seeded for a clean test submission.
 
 
         # Seed Knowledge Base (RAG)
