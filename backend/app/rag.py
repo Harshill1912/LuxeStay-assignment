@@ -16,8 +16,11 @@ _STOPWORDS = {
 
 
 def _tokenize(text: str) -> set:
+    text_clean = (text or "").lower()
+    text_clean = re.sub(r"\bcheckin\b", "check in check-in", text_clean)
+    text_clean = re.sub(r"\bcheckout\b", "check out check-out", text_clean)
     return {
-        w for w in re.findall(r"[a-z0-9]+", (text or "").lower())
+        w for w in re.findall(r"[a-z0-9]+", text_clean)
         if w not in _STOPWORDS and len(w) > 2
     }
 

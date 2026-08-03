@@ -396,6 +396,15 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
         msg = f"Here is the payment status for your reservation{'s' if len(bookings) > 1 else ''}:\n\n" + "\n\n".join(items)
         return ChatResponse(type="text", message=msg)
 
+    # --- CHECK-IN / CHECK-OUT HOURS DETERMINISTIC INTERCEPT ---
+    is_checkin_query = any(phrase in query_lower for phrase in [
+        "checkin time", "check-in time", "check in time", "check in hours", "checkin hours", "check-in hours",
+        "checkout time", "check-out time", "check out time", "checkout hours", "check-out hours"
+    ]) or (any(w in query_lower for w in ["checkin", "check-in"]) and any(w in query_lower for w in ["time", "when", "hour", "hours"]))
+    if is_checkin_query and not any(w in query_lower for w in ["book", "reserve", "status"]):
+        checkin_info = "Standard check-in is **2:00 PM** and check-out is **12:00 noon (IST)**. Early check-in and late check-out are subject to availability and may carry a nominal charge. Valid government ID (Aadhaar/Passport) is mandatory at check-in."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {checkin_info}")
+
     # --- ADMIN BOOKINGS LOOKUP DETERMINISTIC INTERCEPT ---
     is_admin_lookup_query = any(w in query_lower for w in ["booked by", "booking by", "bookings by", "reservations by", "booked for", "bookings of", "reservations of", "books by", "booking for"])
     if is_admin_lookup_query and user_role == "admin":
@@ -743,15 +752,23 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
                 if not stmt_clean or len(stmt_clean) < 5:
                     continue
                 stmt_lower = stmt_clean.lower()
-                if q_tokens and any(t in stmt_lower for t in q_tokens):
-                    # Ensure statement ends nicely
-                    if not stmt_clean.endswith("."):
-                        stmt_clean += "."
-                    if stmt_clean not in relevant_sentences:
-                        relevant_sentences.append(stmt_clean)
+                if q_tokens:
+                    matches = sum(1 for t in q_tokens if t in stmt_lower)
+                    if matches > 0:
+                        first_pos = min(stmt_lower.find(t) for t in q_tokens if t in stmt_lower)
+                        score = matches * 10 - (first_pos * 0.1)
+                        if not stmt_clean.endswith("."):
+                            stmt_clean += "."
+                        relevant_sentences.append((stmt_clean, score))
         
         if relevant_sentences:
-            formatted = "\n".join([f"• {s}" for s in relevant_sentences[:2]])
+            relevant_sentences.sort(key=lambda x: x[1], reverse=True)
+            unique_sentences = []
+            for s, _ in relevant_sentences:
+                if s not in unique_sentences:
+                    unique_sentences.append(s)
+            
+            formatted = "\n".join([f"• {s}" for s in unique_sentences[:1]])
             return ChatResponse(type="text", message=f"Based on our hotel information:\n\n{formatted}")
         
         # Fallback to first matching doc if no exact sentence match
