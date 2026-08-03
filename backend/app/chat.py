@@ -431,6 +431,51 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
             message=f"Namaste{name_str}! Welcome to **LuxeStay**. How may I assist you today with room availability, reservations, hotel amenities, or resort policies?"
         )
 
+    # --- BREAKFAST & DINING DETERMINISTIC INTERCEPT ---
+    is_breakfast_query = any(phrase in query_lower for phrase in [
+        "breakfast", "buffet", "food", "dining", "meal", "vegetarian", "jain", "room service"
+    ]) and not any(w in query_lower for w in ["book", "reserve", "status"])
+    if is_breakfast_query:
+        bf_info = "Complimentary buffet breakfast is served daily at the Azure Lounge from **7:00 AM to 10:30 AM**, featuring South Indian, North Indian, Continental, pure-vegetarian, and Jain options. In-room dining and 24/7 room service are also available."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {bf_info}")
+
+    # --- AIRPORT TRANSFER & DISTANCE DETERMINISTIC INTERCEPT ---
+    is_airport_query = any(phrase in query_lower for phrase in [
+        "airport", "distance", "railway", "cab", "taxi", "transfer", "how far"
+    ]) and not any(w in query_lower for w in ["book", "reserve", "status"])
+    if is_airport_query:
+        air_info = "LuxeStay is approximately **45 minutes** from Dabolim International Airport and **20 minutes** from the city railway station. Complimentary airport transfer is provided for suite & villa guests."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {air_info}")
+
+    # --- POOL, SPA & AMENITIES DETERMINISTIC INTERCEPT ---
+    is_amenities_query = any(phrase in query_lower for phrase in [
+        "pool", "spa", "gym", "fitness", "wifi", "wi-fi", "internet", "parking", "yoga"
+    ]) and not any(w in query_lower for w in ["book", "reserve", "status"])
+    if is_amenities_query:
+        amenity_info = "LuxeStay features an outdoor **infinity pool**, a traditional **Ayurvedic spa**, a 24/7 **fitness centre**, complimentary high-speed **Wi-Fi**, valet parking, and daily morning yoga at 6:30 AM in the garden."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {amenity_info}")
+
+    # --- PET POLICY DETERMINISTIC INTERCEPT ---
+    is_pet_query = any(phrase in query_lower for phrase in ["pet", "pets", "dog", "cat", "animals"])
+    if is_pet_query:
+        pet_info = "Pets are strictly not permitted on resort property, with the exception of certified service animals accompanying guests with disabilities."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {pet_info}")
+
+    # --- SMOKING & HOUSE RULES DETERMINISTIC INTERCEPT ---
+    is_house_rules_query = any(phrase in query_lower for phrase in ["smoking", "smoke", "couple", "couples", "unmarried", "visitor", "visitors"])
+    if is_house_rules_query:
+        rule_info = "The property is **100% non-smoking indoors** (designated outdoor smoking zones are available). **Unmarried couples** with valid government photo ID (Aadhaar/Passport) are welcome. Visitors are allowed in rooms until 9:00 PM."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {rule_info}")
+
+    # --- COURTESY / THANKS / GOODBYE DETERMINISTIC INTERCEPT ---
+    q_clean = query_lower.strip().rstrip("!.")
+    if any(t in q_clean for t in ["thank", "thanks", "thx", "thanku", "appreciate"]):
+        return ChatResponse(type="text", message="You're most welcome! Please let me know if you need anything else to make your stay at **LuxeStay** memorable.")
+    if q_clean in ["bye", "goodbye", "see ya", "cya"]:
+        return ChatResponse(type="text", message="Goodbye! Have a wonderful day, and we look forward to welcoming you to **LuxeStay**.")
+    if q_clean in ["ok", "okay", "cool", "great", "awesome", "perfect"]:
+        return ChatResponse(type="text", message="Glad I could help! Let me know if you have any other questions about LuxeStay.")
+
     # --- ADMIN BOOKINGS LOOKUP DETERMINISTIC INTERCEPT ---
     is_admin_lookup_query = any(w in query_lower for w in ["booked by", "booking by", "bookings by", "reservations by", "booked for", "bookings of", "reservations of", "books by", "booking for"])
     if is_admin_lookup_query and user_role == "admin":
