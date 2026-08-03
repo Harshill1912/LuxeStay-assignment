@@ -335,7 +335,8 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
 
     # --- GUEST RESERVATION QUERIES DETERMINISTIC INTERCEPT ---
     is_user_booking_query = any(w in query_lower for w in [
-        "booked by me", "my booking", "my bookings", "my reservation", "my reservations", "show my booking", "how many rooms is booked", "how many rooms are booked"
+        "booked by me", "my booking", "my bookings", "my reservation", "my reservations", "show my booking", 
+        "how many rooms is booked", "how many rooms are booked", "my room booking", "show my room booking", "my room"
     ])
     if is_user_booking_query:
         if not user:
@@ -359,6 +360,39 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
             items.append(f"• **{title}** (Room #{rm.room_number if rm else '?'})\n  📅 Dates: {dates_label}{price_label}\n  Status: {status_label}")
         
         msg = f"You currently have **{len(bookings)} reservation{'s' if len(bookings) > 1 else ''}** with LuxeStay:\n\n" + "\n\n".join(items)
+        return ChatResponse(type="text", message=msg)
+
+    # --- PAYMENT STATUS DETERMINISTIC INTERCEPT ---
+    is_payment_query = any(phrase in query_lower for phrase in [
+        "is payment done", "is payment is done", "payment status", "is deposit paid", "is my deposit paid", 
+        "did i pay", "payment completed", "has payment been made", "my payment", "payment done", "is payment"
+    ])
+    if is_payment_query:
+        if not user:
+            return ChatResponse(type="text", message="Please log in to your account to check your payment status.")
+        
+        bookings = db.query(Booking).filter(Booking.user_id == user.id).all()
+        if not bookings:
+            return ChatResponse(type="text", message="You currently do not have any room reservations or pending payments with LuxeStay.")
+        
+        items = []
+        for b in bookings:
+            rm = db.query(Room).filter(Room.id == b.room_id).first()
+            title = rm.title if rm else f"Room #{b.room_id}"
+            if b.status == "paid":
+                status_str = "✅ **30% Advance Deposit Paid & Confirmed**"
+                if b.transaction_id:
+                    status_str += f" (Txn: `{b.transaction_id}`)"
+            elif b.status == "approved":
+                status_str = "⏳ **Approved by Manager — 30% Deposit Pending Payment**. Please go to your Bookings tab to complete payment."
+            elif b.status == "pending_approval":
+                status_str = "🕒 **Awaiting Manager Approval**. Payment will be enabled once your request is approved."
+            else:
+                status_str = "❌ **Declined / Cancelled**"
+            
+            items.append(f"• **{title}** (Room #{rm.room_number if rm else '?'})\n  Payment Status: {status_str}")
+        
+        msg = f"Here is the payment status for your reservation{'s' if len(bookings) > 1 else ''}:\n\n" + "\n\n".join(items)
         return ChatResponse(type="text", message=msg)
 
     # --- ADMIN BOOKINGS LOOKUP DETERMINISTIC INTERCEPT ---
