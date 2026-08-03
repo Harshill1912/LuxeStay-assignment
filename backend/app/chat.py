@@ -290,7 +290,12 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
             )
 
     # --- DETERMINISTIC ROOM LIST INTERCEPT (Failsafe for LLM rate limits/offline) ---
-    is_search_intent = any(w in query_lower for w in ["show room", "show rooms", "available room", "available rooms", "search room", "search rooms", "view room", "view rooms", "list room", "list rooms", "find room", "find rooms", "availability"])
+    is_search_intent = any(w in query_lower for w in [
+        "show room", "show rooms", "available room", "available rooms", "search room", "search rooms", 
+        "view room", "view rooms", "list room", "list rooms", "find room", "find rooms", "availability",
+        "rooms are available", "room is available", "rooms available", "room available", "what rooms", 
+        "which rooms", "rooms do you have", "browse rooms", "see rooms"
+    ]) or (("room" in query_lower or "rooms" in query_lower) and ("available" in query_lower or "vacant" in query_lower))
     if is_search_intent:
         avail_rooms = db.query(Room).filter(Room.status == "available").all()
         room_payloads = []
