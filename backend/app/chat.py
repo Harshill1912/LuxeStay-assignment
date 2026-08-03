@@ -181,6 +181,7 @@ CRITICAL RULES:
 - For guest booking status, use guest-friendly terms: "Being confirmed by our team", "Confirmed ✓", "Unfortunately unavailable".
 - CURRENCY: All tariffs are in Indian Rupees (₹). Always show prices with the ₹ symbol (e.g. ₹29,000/night).
 - PAYMENTS & POLICIES: Aadhaar/Passport required at check-in. Standard GST applies (12% up to ₹7,500/night, 18% above).
+- CONCISE ANSWER RULE: Answer ONLY the specific question asked by the user in 1-2 direct sentences. Do NOT include unrelated policies, amenities, or rules from the context unless directly asked by the user.
 - Use the HOTEL POLICY context to answer policy questions naturally.
 
 SLIDING WINDOW CHAT HISTORY (UP TO 10 RECENT TURNS - CLOSEST TURN HAS HIGHEST PRIORITY):
@@ -729,17 +730,34 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
     # Fallback: RAG context if available
     if relevant_docs:
         import re
-        q_tokens = {w for w in re.findall(r"[a-z0-9]+", query_lower) if len(w) > 3 and w not in ["what", "how", "when", "where", "your", "hotel", "tell", "show", "policy"]}
-        matched_docs = []
-        for doc in relevant_docs:
-            doc_text = f"{doc.title} {doc.content}".lower()
-            if not q_tokens or any(t in doc_text for t in q_tokens):
-                matched_docs.append(doc)
+        q_tokens = {w for w in re.findall(r"[a-z0-9]+", query_lower) if len(w) > 2 and w not in [
+            "what", "how", "when", "where", "your", "hotel", "tell", "show", "policy", "is", "are", "do", "does", "the", "about", "allowed", "allow"
+        ]}
         
-        target_docs = matched_docs if matched_docs else relevant_docs[:1]
+        # Extract sentence-level matches that directly answer the question
+        relevant_sentences = []
+        for doc in relevant_docs:
+            lines_or_sentences = re.split(r"[\n•\.]", doc.content)
+            for stmt in lines_or_sentences:
+                stmt_clean = stmt.strip()
+                if not stmt_clean or len(stmt_clean) < 5:
+                    continue
+                stmt_lower = stmt_clean.lower()
+                if q_tokens and any(t in stmt_lower for t in q_tokens):
+                    # Ensure statement ends nicely
+                    if not stmt_clean.endswith("."):
+                        stmt_clean += "."
+                    if stmt_clean not in relevant_sentences:
+                        relevant_sentences.append(stmt_clean)
+        
+        if relevant_sentences:
+            formatted = "\n".join([f"• {s}" for s in relevant_sentences[:2]])
+            return ChatResponse(type="text", message=f"Based on our hotel information:\n\n{formatted}")
+        
+        # Fallback to first matching doc if no exact sentence match
         return ChatResponse(
             type="text",
-            message=f"Based on our hotel information:\n\n" + "\n\n".join([f"• {doc.content}" for doc in target_docs])
+            message=f"Based on our hotel information:\n\n• {relevant_docs[0].content}"
         )
 
     return ChatResponse(
