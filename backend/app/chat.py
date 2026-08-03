@@ -433,11 +433,14 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
 
     # --- BREAKFAST & DINING DETERMINISTIC INTERCEPT ---
     is_breakfast_query = any(phrase in query_lower for phrase in [
-        "breakfast", "buffet", "food", "dining", "meal", "vegetarian", "jain", "room service"
+        "breakfast", "buffet", "food", "dining", "meal", "vegetarian", "jain", "room service", "lunch", "dinner"
     ]) and not any(w in query_lower for w in ["book", "reserve", "status"])
     if is_breakfast_query:
-        bf_info = "Complimentary buffet breakfast is served daily at the Azure Lounge from **7:00 AM to 10:30 AM**, featuring South Indian, North Indian, Continental, pure-vegetarian, and Jain options. In-room dining and 24/7 room service are also available."
-        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {bf_info}")
+        if any(w in query_lower for w in ["lunch", "dinner"]):
+            dining_info = "Our multi-cuisine restaurants serve lunch and dinner daily, featuring authentic Indian thalis, Continental spreads, pure-vegetarian, and Jain meals. In-room dining and 24/7 room service are available via the concierge."
+        else:
+            dining_info = "Complimentary buffet breakfast is served daily at the Azure Lounge from **7:00 AM to 10:30 AM**, featuring South Indian, North Indian, Continental, pure-vegetarian, and Jain options. In-room dining and 24/7 room service are also available."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {dining_info}")
 
     # --- AIRPORT TRANSFER & DISTANCE DETERMINISTIC INTERCEPT ---
     is_airport_query = any(phrase in query_lower for phrase in [
