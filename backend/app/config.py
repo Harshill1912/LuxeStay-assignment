@@ -20,6 +20,27 @@ class Settings(BaseSettings):
     LLM_MODEL: str = os.getenv("LLM_MODEL", "gemini-1.5-flash")
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 
+    # ===== KNOWLEDGE-BASE-ONLY (CLOSED-BOOK) GROUNDING =====
+    # When True the concierge may ONLY answer from retrieved knowledge documents
+    # and live hotel data. Anything else gets the refusal message below.
+    KB_ONLY_MODE: bool = os.getenv("KB_ONLY_MODE", "true").lower() in ("1", "true", "yes")
+
+    # Minimum hybrid retrieval score a document must reach to enter the prompt.
+    RAG_MIN_SCORE: float = float(os.getenv("RAG_MIN_SCORE", "0.15"))
+
+    # Higher bar for serving a KB snippet DIRECTLY to the guest (no-LLM fallback).
+    # Between the two thresholds a document may still inform the LLM, but a weak
+    # tangential match (one shared word) is never quoted as the answer itself.
+    RAG_ANSWER_MIN_SCORE: float = float(os.getenv("RAG_ANSWER_MIN_SCORE", "0.35"))
+
+    # Shown whenever the knowledge base does not cover the question.
+    KB_NO_ANSWER_MESSAGE: str = os.getenv(
+        "KB_NO_ANSWER_MESSAGE",
+        "I don't have that information in LuxeStay's hotel records. "
+        "I can help with our rooms, tariffs, reservations, amenities and hotel policies — "
+        "or our front desk team can assist you further."
+    )
+
     class Config:
         env_file = ".env"
         extra = "ignore"

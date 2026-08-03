@@ -29,6 +29,50 @@ _SYNONYM_MAP: Dict[str, List[str]] = {
     "pool": ["infinity", "spa", "ayurvedic", "fitness", "gym", "wi-fi", "parking", "amenities"],
     "smoking": ["non-smoking", "couples", "unmarried", "cctv", "safe", "security", "rules"],
     "payment": ["upi", "card", "cards", "deposit", "netbanking", "cash", "pre-authorisation"],
+    "location": ["located", "address", "where", "beach", "road", "goa", "contact", "reach"],
+    "far": ["distance", "minutes", "approximately", "airport", "railway", "away"],
+    "distance": ["far", "minutes", "approximately", "airport", "railway", "away"],
+    "address": ["location", "located", "beach", "road", "goa", "contact"],
+    "located": ["location", "address", "beach", "road", "goa", "contact"],
+    "wifi": ["wi-fi", "internet", "connectivity", "network", "bandwidth", "business"],
+    "wi-fi": ["wifi", "internet", "connectivity", "network", "bandwidth", "business"],
+    "internet": ["wifi", "wi-fi", "connectivity", "network", "bandwidth"],
+    "laundry": ["housekeeping", "dry", "cleaning", "pressing", "turndown", "serviced"],
+    "housekeeping": ["laundry", "cleaning", "turndown", "serviced", "daily"],
+    "deposit": ["advance", "balance", "payment", "confirm", "transaction"],
+    "advance": ["deposit", "balance", "payment", "confirm", "transaction"],
+    "voucher": ["pass", "pdf", "print", "reservation", "confirmation"],
+    "addon": ["add-on", "add-ons", "transfer", "spa", "chef", "extra", "bed", "services"],
+    "add-on": ["addon", "add-ons", "transfer", "spa", "chef", "extra", "bed", "services"],
+    "addons": ["add-on", "add-ons", "transfer", "spa", "chef", "extra", "bed", "services"],
+    "spa": ["ayurvedic", "wellness", "massage", "treatment", "couples", "package"],
+    "chef": ["private", "dinner", "dining", "add-on"],
+    "wheelchair": ["accessible", "accessibility", "assistance", "disability", "grab", "rails", "step-free"],
+    "accessible": ["wheelchair", "accessibility", "assistance", "disability", "step-free"],
+    "doctor": ["medical", "emergency", "hospital", "first-aid", "assistance", "call"],
+    "medical": ["doctor", "emergency", "hospital", "first-aid", "assistance"],
+    "emergency": ["doctor", "medical", "hospital", "first-aid", "call"],
+    "wedding": ["weddings", "event", "events", "banquet", "banquets", "reception", "lawn"],
+    "event": ["events", "wedding", "weddings", "banquet", "banquets", "conference", "corporate"],
+    "banquet": ["banquets", "wedding", "event", "events", "reception", "hall"],
+    "lost": ["found", "left", "item", "items", "property", "claim", "belongings"],
+    "found": ["lost", "left", "item", "items", "property", "claim"],
+    "tip": ["tipping", "gratuity", "service", "charge"],
+    "tipping": ["tip", "gratuity", "service", "charge"],
+    "currency": ["exchange", "foreign", "rupees", "forex", "rates"],
+    "exchange": ["currency", "foreign", "rupees", "forex", "rates"],
+    "sustainability": ["sustainable", "eco", "environment", "solar", "plastic", "green"],
+    "eco": ["sustainability", "sustainable", "environment", "solar", "plastic", "green"],
+    "villa": ["villas", "suite", "suites", "cabana", "executive", "categories", "types"],
+    "suite": ["suites", "villa", "villas", "cabana", "executive", "categories", "types"],
+    "approval": ["approved", "approve", "review", "reviewed", "reservations", "request", "confirmed"],
+    "approve": ["approval", "approved", "review", "reviewed", "request", "confirmed"],
+    "process": ["reviewed", "request", "requested", "confirmed", "team", "reservations"],
+    "categories": ["category", "types", "accommodation", "suites", "villas", "cabanas", "executive"],
+    "category": ["categories", "types", "accommodation", "suites", "villas", "cabanas", "executive"],
+    "types": ["categories", "category", "accommodation", "suites", "villas", "cabanas", "executive"],
+    "timings": ["timing", "open", "hours", "daily", "operates"],
+    "timing": ["timings", "open", "hours", "daily", "operates"],
 }
 
 
@@ -124,13 +168,24 @@ def _cosine_sim(v1: List[float], v2: List[float]) -> float:
 
 
 def rank_relevant_docs(
-    db: Session, query: str, top_k: int = 4, min_score: float = 0.15
+    db: Session,
+    query: str,
+    top_k: int = 4,
+    min_score: Optional[float] = None,
+    allow_low_score_fallback: bool = False,
 ) -> List[Tuple[KnowledgeDocument, float]]:
     """
     Production-Grade Hybrid Retrieval System:
     Combines dense semantic vector similarity with BM25-style keyword overlap & synonym expansion.
     Title matches receive extra boost, and documents without term alignment are filtered out.
+
+    In knowledge-base-only mode nothing is returned when no document clears `min_score` —
+    an empty result is the signal that the KB does not cover the question, so the
+    concierge must refuse rather than answer from the model's own knowledge. Pass
+    `allow_low_score_fallback=True` only for non-answering uses (e.g. suggestions).
     """
+    if min_score is None:
+        min_score = settings.RAG_MIN_SCORE
     all_docs = db.query(KnowledgeDocument).all()
     if not all_docs:
         return []
@@ -163,14 +218,49 @@ def rank_relevant_docs(
     # Sort descending by score
     scored.sort(key=lambda pair: pair[1], reverse=True)
     filtered = [(doc, score) for doc, score in scored if score >= min_score]
-    if not filtered and scored:
+    if not filtered and scored and allow_low_score_fallback:
         filtered = scored[:1]
     return filtered[:top_k]
 
 
 def search_relevant_docs(db: Session, query: str, top_k: int = 4) -> List[KnowledgeDocument]:
-    """Retrieve top-K relevant documents for RAG context."""
+    """Retrieve top-K relevant documents for RAG context (empty when the KB has no match)."""
     return [doc for doc, _ in rank_relevant_docs(db, query, top_k=top_k)]
+
+
+def extract_best_answer_across(query: str, docs: List[KnowledgeDocument]) -> str:
+    """
+    Pick the single best-scoring sentence across several retrieved documents.
+    Sentence scores are comparable across documents, so this corrects cases where
+    document-level ranking put the right doc second (e.g. two docs both mention
+    'deposit' but only one answers the question asked).
+    """
+    best_snippet, best_score = "", float("-inf")
+    query_tokens = _tokenize(query)
+    for doc in docs:
+        for stmt, score in _score_sentences(query_tokens, doc.content):
+            if score > best_score:
+                best_snippet, best_score = stmt, score
+    if best_snippet:
+        return best_snippet
+    return docs[0].content.strip() if docs else ""
+
+
+def _score_sentences(query_tokens: set, content: str) -> List[Tuple[str, float]]:
+    """Score each sentence of `content` by matched query terms (position breaks ties)."""
+    sentences = re.split(r"[\n•\.]", content or "")
+    scored = []
+    for idx, stmt in enumerate(sentences):
+        stmt_clean = stmt.strip()
+        if not stmt_clean or len(stmt_clean) < 6:
+            continue
+        stmt_tokens = _tokenize(stmt_clean)
+        matches = len(query_tokens & stmt_tokens) if query_tokens else 0
+        if matches > 0:
+            if not stmt_clean.endswith("."):
+                stmt_clean += "."
+            scored.append((stmt_clean, matches * 10 - (idx * 0.1)))
+    return scored
 
 
 def extract_best_answer_snippet(query: str, doc: KnowledgeDocument) -> str:
@@ -179,28 +269,9 @@ def extract_best_answer_snippet(query: str, doc: KnowledgeDocument) -> str:
     Extracts and returns the single highest-confidence sentence snippet from a document
     that directly answers the user's query.
     """
-    query_tokens = _tokenize(query)
-    sentences = re.split(r"[\n•\.]", doc.content)
-    
-    scored_sentences = []
-    for stmt in sentences:
-        stmt_clean = stmt.strip()
-        if not stmt_clean or len(stmt_clean) < 6:
-            continue
-            
-        stmt_tokens = _tokenize(stmt_clean)
-        matches = len(query_tokens & stmt_tokens) if query_tokens else 0
-        if matches > 0:
-            # Score based on keyword matches and early appearance of keyword
-            stmt_lower = stmt_clean.lower()
-            first_pos = min(stmt_lower.find(t) for t in query_tokens if t in stmt_lower)
-            score = matches * 10 - (first_pos * 0.05)
-            if not stmt_clean.endswith("."):
-                stmt_clean += "."
-            scored_sentences.append((stmt_clean, score))
-
+    scored_sentences = _score_sentences(_tokenize(query), doc.content)
     if scored_sentences:
         scored_sentences.sort(key=lambda x: x[1], reverse=True)
         return scored_sentences[0][0]
-        
+
     return doc.content.strip()

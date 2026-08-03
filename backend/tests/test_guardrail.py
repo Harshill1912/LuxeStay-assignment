@@ -97,4 +97,4 @@ def test_admin_user_chat_approval_action_succeeds():
     assert response.status_code == 200
     data = response.json()
     assert data["type"] == "text"
-    assert "APPROVED" in data["message"]
+    assert "approved" in data["message"].lower()

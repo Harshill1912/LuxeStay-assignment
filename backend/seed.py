@@ -39,13 +39,120 @@ KNOWLEDGE_DOCS = [
      "Chauffeur-driven cabs and self-drive rentals can be arranged through the concierge. The hotel is "
      "approximately 45 minutes from the international airport and 20 minutes from the city railway station."),
     ("Children, Extra Beds & Pets",
-     "Children under 6 stay free using existing bedding. An extra bed or mattress is available at ₹2,500 per "
-     "night inclusive of breakfast. The hotel is family friendly with a kids' play area. Pets are not permitted, "
-     "except certified service animals accompanying guests with disabilities."),
+     "Children under 6 stay free using existing bedding. An extra rollaway bed or mattress is available at "
+     "₹1,500 per night plus 18% GST, inclusive of breakfast. The hotel is family friendly with a kids' play area. "
+     "Pets are not permitted, except certified service animals accompanying guests with disabilities."),
+    ("Hotel Location & Contact",
+     "LuxeStay is located on Beach Road, North Goa, Goa 403516, India. The property is approximately "
+     "45 minutes by road from Dabolim International Airport and 20 minutes from the city railway station. "
+     "The front desk is staffed 24 hours a day and can be reached through the concierge desk in the lobby."),
     ("Guest Safety & House Rules",
      "The property is 100% non-smoking indoors; smoking is permitted only in designated outdoor zones. "
      "Unmarried couples with valid government ID are welcome. Visitors are allowed in rooms until 9:00 PM "
      "after registering at reception. The hotel has 24/7 CCTV surveillance, in-room safes, and round-the-clock security."),
+
+    # ===== Documents describing how the LuxeStay platform itself works =====
+    # These mirror the reservation logic implemented in chat.py and routers/bookings.py.
+    # Keep them in sync whenever that logic changes.
+    ("Reservation & Approval Process",
+     "Reservations are requested through the LuxeStay AI Concierge or the room listing, and every request is "
+     "reviewed by our reservations team before it is confirmed. A new request first appears as awaiting "
+     "confirmation, then becomes approved once our team accepts it, and finally becomes confirmed after the "
+     "advance deposit is paid. You must be signed in to request a reservation. A room cannot be requested for "
+     "more guests than its stated capacity, and a room already reserved for overlapping dates cannot be "
+     "requested again — the concierge will suggest alternative dates or accommodations."),
+
+    ("Advance Deposit & Balance Payment",
+     "A 30% advance deposit of the total stay value is required to confirm a reservation. The deposit becomes "
+     "payable once our reservations team approves your request, and is paid by credit or debit card from the "
+     "Bookings page. The remaining 70% balance is due at check-in. A transaction reference beginning with TXN "
+     "is issued the moment the deposit is received, and the reservation is then marked as confirmed. Until the "
+     "deposit is paid the room is held only provisionally."),
+
+    ("Optional Add-on Services & Charges",
+     "Four optional services can be added to a reservation at the time of booking. Airport chauffeur transfer "
+     "is ₹3,000 per stay. The couples spa and wellness package is ₹6,000 per stay. A private chef dinner is "
+     "₹4,500 per stay. An extra rollaway bed is ₹1,500 per night. All add-on services are charged 18% GST "
+     "regardless of the room tariff, and are included in the total on which the 30% advance deposit is "
+     "calculated. Add-ons are selected on the reservation checkout card before you confirm."),
+
+    ("Reservation Voucher & Pass",
+     "Once the advance deposit is paid, an official LuxeStay reservation voucher is issued and can be viewed, "
+     "printed, or saved as a PDF from the Bookings page. The voucher carries a QR code, your reservation "
+     "reference, room and stay details, the full payment breakdown, and the balance amount payable at check-in. "
+     "Please present the voucher together with valid government photo ID at the front desk on arrival."),
+
+    ("Room Categories & Accommodation Types",
+     "LuxeStay offers four accommodation categories. Suites are our signature ocean-view and heritage rooms. "
+     "Villas are our largest residences, with private pools, butler or personal chef service, and space for up "
+     "to six guests. Executive rooms are designed for business travellers with dedicated workspaces. Cabanas "
+     "are rustic-luxury garden retreats. Nightly tariffs range from ₹12,000 for an executive room to ₹95,000 "
+     "for a lagoon villa, exclusive of GST. Live availability, capacity, and current tariffs for every room "
+     "are shown in the concierge and on the rooms page."),
+
+    ("Managing or Cancelling Your Reservation",
+     "You can view every reservation, its current status, and its payment state on the Bookings page after "
+     "signing in. A reservation may be cancelled from that page at any time before check-in, and the room is "
+     "immediately released back into availability. Refund amounts are governed by our Cancellation & Refund "
+     "Policy. To change dates, guest count, or add-on services, please cancel and submit a fresh request, or "
+     "ask the concierge for assistance."),
+
+    # ===== Additional guest-services policies =====
+    ("Wi-Fi, Connectivity & Business Centre",
+     "Complimentary high-speed Wi-Fi is available in all rooms and public areas; connect to the LuxeStay "
+     "network and sign in with your room number and surname. The business centre offers printing, scanning, "
+     "and two private meeting pods, and is open from 8:00 AM to 8:00 PM. Guests in suites and villas receive "
+     "premium bandwidth suitable for video conferencing."),
+
+    ("Housekeeping & Laundry Services",
+     "Rooms are serviced daily between 9:00 AM and 4:00 PM, with evening turndown available on request. "
+     "Same-day laundry, dry cleaning, and pressing are collected before 9:00 AM and returned by 7:00 PM the "
+     "same day; items collected later are returned the next day. Laundry is charged per item as listed in the "
+     "in-room directory. Sanctuary Club Suite guests receive complimentary laundry."),
+
+    ("Swimming Pool & Wellness Timings",
+     "The outdoor infinity pool is open from 6:00 AM to 8:00 PM daily; children must be accompanied by an "
+     "adult at all times and there is no lifeguard on duty after 6:00 PM. The Ayurvedic spa operates from "
+     "9:00 AM to 9:00 PM with treatments by prior appointment through the concierge. The fitness centre is "
+     "accessible 24 hours with your room key. Complimentary yoga is held every morning at 6:30 AM in the garden."),
+
+    ("Accessibility & Special Assistance",
+     "The lobby, restaurants, pool deck, and banquet halls are step-free and wheelchair accessible, and "
+     "accessible rooms with grab rails and roll-in showers are available on request at the time of booking. "
+     "Wheelchairs can be borrowed from the concierge at no charge. Certified service animals are welcome "
+     "throughout the property. Please inform us of any mobility, dietary, or medical requirement in advance "
+     "so we can prepare for your arrival."),
+
+    ("Medical Assistance & Emergencies",
+     "A doctor is on call 24 hours a day and can attend to guests in their room; consultation charges are "
+     "posted to the room account. First-aid kits and an automated external defibrillator are held at the front "
+     "desk, and the nearest multi-speciality hospital is approximately 15 minutes away. In an emergency, dial "
+     "0 from any room phone to reach the front desk, or use the emergency call points on every floor."),
+
+    ("Events, Weddings & Banquets",
+     "LuxeStay has two banquet halls and a beachfront lawn for weddings, receptions, and corporate events, "
+     "accommodating up to 400 guests. Packages cover catering, décor, audio-visual equipment, and "
+     "accommodation blocks at preferential rates. Event enquiries are handled by our events team through the "
+     "concierge, and a site visit can be arranged. Confirmed events require a signed agreement and an advance "
+     "against the estimated value."),
+
+    ("Lost & Found and Guest Property",
+     "Items left behind are logged and held securely at the front desk for 90 days, after which unclaimed "
+     "items are donated to charity. To claim an item, contact the concierge with your reservation reference "
+     "and a description; recovered items can be couriered at the guest's cost. Valuables should be kept in the "
+     "in-room safe, as the hotel is not liable for cash or valuables left unsecured in rooms."),
+
+    ("Tipping, Currency & Foreign Exchange",
+     "All charges are billed in Indian Rupees (₹). Tipping is entirely at your discretion; a service charge is "
+     "not added to your bill. Foreign exchange for major currencies is available at the front desk during "
+     "banking hours at prevailing rates, and a currency declaration form is completed as required by Indian "
+     "regulations. International cards are accepted, and charges are settled in Indian Rupees."),
+
+    ("Sustainability & Responsible Hospitality",
+     "LuxeStay operates on solar-assisted power with rainwater harvesting and an on-site water treatment plant. "
+     "Single-use plastics have been eliminated from rooms and dining in favour of glass and biodegradable "
+     "alternatives. Linen and towels are changed on request rather than daily to conserve water. Kitchen waste "
+     "is composted for the property gardens, and we source produce from farms within the region wherever possible."),
 ]
 
 
@@ -184,10 +291,11 @@ def seed():
         # No default bookings seeded for a clean test submission.
 
 
-        # Seed Knowledge Base (RAG)
-        if db.query(KnowledgeDocument).count() == 0:
-            docs = KNOWLEDGE_DOCS
-            for title, content in docs:
+        # Seed Knowledge Base (RAG) — sync by title so newly added documents are
+        # ingested on the next startup even when the KB is already populated.
+        existing_titles = {t for (t,) in db.query(KnowledgeDocument.title).all()}
+        for title, content in KNOWLEDGE_DOCS:
+            if title not in existing_titles:
                 ingest_document(db, title, content)
 
         print("Database seeded successfully!")
