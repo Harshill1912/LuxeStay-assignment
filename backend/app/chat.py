@@ -693,8 +693,20 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
             return ChatResponse(type="text", message="You don't have any reservations yet. Would you like to browse our available rooms?")
     
     # Fallback: RAG context if available
-    if rag_context:
-        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n" + "\n".join([f"• {doc.content}" for doc in relevant_docs]))
+    if relevant_docs:
+        import re
+        q_tokens = {w for w in re.findall(r"[a-z0-9]+", query_lower) if len(w) > 3 and w not in ["what", "how", "when", "where", "your", "hotel", "tell", "show", "policy"]}
+        matched_docs = []
+        for doc in relevant_docs:
+            doc_text = f"{doc.title} {doc.content}".lower()
+            if not q_tokens or any(t in doc_text for t in q_tokens):
+                matched_docs.append(doc)
+        
+        target_docs = matched_docs if matched_docs else relevant_docs[:1]
+        return ChatResponse(
+            type="text",
+            message=f"Based on our hotel information:\n\n" + "\n\n".join([f"• {doc.content}" for doc in target_docs])
+        )
 
     return ChatResponse(
         type="text",

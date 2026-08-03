@@ -99,12 +99,12 @@ def _keyword_score(query_tokens: set, doc: KnowledgeDocument) -> float:
 
 
 def rank_relevant_docs(
-    db: Session, query: str, top_k: int = 4, min_score: float = 0.06
+    db: Session, query: str, top_k: int = 4, min_score: float = 0.15
 ) -> List[Tuple[KnowledgeDocument, float]]:
     """
     Hybrid retrieval: blends embedding cosine similarity with keyword overlap so
-    the concierge stays accurate even when running on the keyless offline embedding
-    fallback. Returns (document, score) pairs above `min_score`, best first.
+    the concierge stays accurate even when running on keyless offline fallback.
+    Strictly filters out irrelevant docs when specific query tokens are present.
     """
     all_docs = db.query(KnowledgeDocument).all()
     if not all_docs:
@@ -115,15 +115,21 @@ def rank_relevant_docs(
 
     scored = []
     for doc in all_docs:
-        semantic = _cosine_sim(query_vector, doc.embedding) if doc.embedding else 0.0
-        keyword = _keyword_score(query_tokens, doc)
-        # Weighted blend — keyword overlap anchors relevance, embeddings add nuance.
-        hybrid = 0.55 * semantic + 0.45 * keyword
+        doc_tokens = _tokenize(f"{doc.title} {doc.content}")
+        overlap = query_tokens & doc_tokens if query_tokens else set()
+        
+        # If user query has specific tokens (e.g. 'cancellation') and doc has 0 token overlap, heavily penalize
+        if query_tokens and not overlap:
+            hybrid = 0.02 * (_cosine_sim(query_vector, doc.embedding) if doc.embedding else 0.0)
+        else:
+            keyword = len(overlap) / len(query_tokens) if query_tokens else 0.0
+            semantic = _cosine_sim(query_vector, doc.embedding) if doc.embedding else 0.0
+            hybrid = 0.65 * keyword + 0.35 * semantic
+
         scored.append((doc, hybrid))
 
     scored.sort(key=lambda pair: pair[1], reverse=True)
     filtered = [(doc, score) for doc, score in scored if score >= min_score]
-    # Always surface at least the single best doc so the concierge isn't left blind.
     if not filtered and scored:
         filtered = scored[:1]
     return filtered[:top_k]
@@ -131,3 +137,4 @@ def rank_relevant_docs(
 
 def search_relevant_docs(db: Session, query: str, top_k: int = 4) -> List[KnowledgeDocument]:
     return [doc for doc, _ in rank_relevant_docs(db, query, top_k=top_k)]
+
