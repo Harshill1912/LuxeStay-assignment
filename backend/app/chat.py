@@ -405,6 +405,32 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
         checkin_info = "Standard check-in is **2:00 PM** and check-out is **12:00 noon (IST)**. Early check-in and late check-out are subject to availability and may carry a nominal charge. Valid government ID (Aadhaar/Passport) is mandatory at check-in."
         return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {checkin_info}")
 
+    # --- HOTEL NAME & IDENTITY DETERMINISTIC INTERCEPT ---
+    is_name_query = any(phrase in query_lower for phrase in [
+        "hotel name", "what ur hotel name", "what is your hotel name", "what is the hotel name", 
+        "name of hotel", "name of the hotel", "who are you", "what is this hotel", "property name", "what ur hotel"
+    ])
+    if is_name_query:
+        return ChatResponse(type="text", message="Welcome to **LuxeStay** — India's premier luxury resort & hotel experience!")
+
+    # --- HOTEL LOCATION & ADDRESS DETERMINISTIC INTERCEPT ---
+    is_location_query = any(phrase in query_lower for phrase in [
+        "hotel location", "where is hotel", "where is the hotel", "where are you located", 
+        "hotel address", "location of hotel", "resort location", "where located"
+    ])
+    if is_location_query:
+        loc_info = "LuxeStay is located on Beach Road, North Goa, Goa 403516, India — approximately 45 minutes from Dabolim International Airport and 20 minutes from the city railway station."
+        return ChatResponse(type="text", message=f"Based on our hotel information:\n\n• {loc_info}")
+
+    # --- GREETINGS DETERMINISTIC INTERCEPT ---
+    is_greeting_query = query_lower.strip() in ["hi", "hello", "hey", "namaste", "good morning", "good evening", "good afternoon"]
+    if is_greeting_query:
+        name_str = f", {user.full_name}" if user else ""
+        return ChatResponse(
+            type="text",
+            message=f"Namaste{name_str}! Welcome to **LuxeStay**. How may I assist you today with room availability, reservations, hotel amenities, or resort policies?"
+        )
+
     # --- ADMIN BOOKINGS LOOKUP DETERMINISTIC INTERCEPT ---
     is_admin_lookup_query = any(w in query_lower for w in ["booked by", "booking by", "bookings by", "reservations by", "booked for", "bookings of", "reservations of", "books by", "booking for"])
     if is_admin_lookup_query and user_role == "admin":

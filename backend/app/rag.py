@@ -11,7 +11,7 @@ _STOPWORDS = {
     "the", "a", "an", "is", "are", "do", "does", "can", "i", "you", "we",
     "my", "me", "of", "to", "for", "and", "or", "in", "on", "at", "it",
     "what", "how", "when", "where", "which", "your", "with", "about", "please",
-    "hotel", "room", "rooms", "have", "has", "any", "there", "this", "that", "tell", "show"
+    "have", "has", "any", "there", "this", "that", "tell", "show"
 }
 
 # Domain Synonym Expansion Map for Hotel Concierge RAG
