@@ -736,45 +736,13 @@ def process_chat_message(db: Session, user: Optional[User], query: str, history:
         else:
             return ChatResponse(type="text", message="You don't have any reservations yet. Would you like to browse our available rooms?")
     
-    # Fallback: RAG context if available
+    # Fallback: Production-Grade RAG Snippet Retrieval
     if relevant_docs:
-        import re
-        q_tokens = {w for w in re.findall(r"[a-z0-9]+", query_lower) if len(w) > 2 and w not in [
-            "what", "how", "when", "where", "your", "hotel", "tell", "show", "policy", "is", "are", "do", "does", "the", "about", "allowed", "allow"
-        ]}
-        
-        # Extract sentence-level matches that directly answer the question
-        relevant_sentences = []
-        for doc in relevant_docs:
-            lines_or_sentences = re.split(r"[\n•\.]", doc.content)
-            for stmt in lines_or_sentences:
-                stmt_clean = stmt.strip()
-                if not stmt_clean or len(stmt_clean) < 5:
-                    continue
-                stmt_lower = stmt_clean.lower()
-                if q_tokens:
-                    matches = sum(1 for t in q_tokens if t in stmt_lower)
-                    if matches > 0:
-                        first_pos = min(stmt_lower.find(t) for t in q_tokens if t in stmt_lower)
-                        score = matches * 10 - (first_pos * 0.1)
-                        if not stmt_clean.endswith("."):
-                            stmt_clean += "."
-                        relevant_sentences.append((stmt_clean, score))
-        
-        if relevant_sentences:
-            relevant_sentences.sort(key=lambda x: x[1], reverse=True)
-            unique_sentences = []
-            for s, _ in relevant_sentences:
-                if s not in unique_sentences:
-                    unique_sentences.append(s)
-            
-            formatted = "\n".join([f"• {s}" for s in unique_sentences[:1]])
-            return ChatResponse(type="text", message=f"Based on our hotel information:\n\n{formatted}")
-        
-        # Fallback to first matching doc if no exact sentence match
+        from app.rag import extract_best_answer_snippet
+        best_snippet = extract_best_answer_snippet(query, relevant_docs[0])
         return ChatResponse(
             type="text",
-            message=f"Based on our hotel information:\n\n• {relevant_docs[0].content}"
+            message=f"Based on our hotel information:\n\n• {best_snippet}"
         )
 
     return ChatResponse(
